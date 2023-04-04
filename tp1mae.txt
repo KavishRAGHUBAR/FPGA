@@ -1,0 +1,10 @@
+TP 1 :
+
+MAE 
+problème de if, else et case.
+pour résoudre il faut mettre un else afin de prendre en compte tous les cas possibles pour avoir une synthèse complete
+sinon on aura des problemes de latch
+
+
+TP2 :
+
