@@ -1,8 +1,8 @@
 ----------------------------------------------------------------------------------
 -- Company: 
--- Engineer: GONG Weiyi, WEN Zhuyu
+-- Engineer:
 -- 
--- Create Date: 2023/03/21 12:16:49
+-- Create Date:
 -- Design Name: 
 -- Module Name: REG_DCC - Behavioral
 -- Project Name: 
@@ -43,7 +43,10 @@ entity REG_DCC is
         TRAME_DCC: in std_logic_vector(50 downto 0); -- il peut y avoir de 42 à 51 bit dans une trame
         
         -- Signaux de sortie
-        DCC_BIT: out std_logic
+        DCC_BIT: out std_logic;
+        TRAME_LEN: out integer;
+        -- TRAME_LEN: out std_logic_vector(5 downto 0);
+
      );
 end REG_DCC;
 
@@ -53,6 +56,8 @@ architecture Behavioral of REG_DCC is
 signal cpt: INTEGER range 0 to 50;
     -- Ensemble de la trame à lire
 signal trame: std_logic_vector(50 downto 0);
+    -- Taille de la trame à lire
+signal t_len: integer;
 
 
 begin
@@ -61,13 +66,14 @@ begin
 process(CLK_100MHz,RESET)
 begin
     -- reset du système
-    if RESET = '0' then cpt <= 0;
+    if RESET = '1' then cpt <= 0;
     -- si la MAE signal qu'elle veut décaller, on retourne le bit actuelle et on passe au bit suivant
-    elsif rising_edge(CLK_100MHz) and COM_REG = '1' and cpt<51 then DCC_BIT <= trame(cpt); cpt <= cpt + 1;
-    -- si la MAE signal qu'elle veut charger une trame, 
-    elsif rising_edge(CLK_100MHz) and COM_REG = '0' then trame <= Trame_DCC; cpt <= 0;
+    elsif rising_edge(CLK_100MHz) and COM_REG = '1' and cpt<t_len then DCC_BIT <= trame(cpt); cpt <= cpt + 1;
+    -- si la MAE signal qu'elle veut charger une trame, on rénitialise cpt, on charge la trame suivante et on envoi sa taille
+    elsif rising_edge(CLK_100MHz) and COM_REG = '0' then trame <= TRAME_DCC; cpt <= 0; t_len := TRAME_DCC'length; TRAME_LEN <= t_len;
     -- si com est défini a 'U' (non défini) par la MAE alors on ne fait rien
     
+    -- elsif rising_edge(CLK_100MHz) and COM_REG = '0' then trame <= TRAME_DCC; cpt <= 0; t_len := TRAME_DCC'length; TRAME_LEN <= std_logic_vector(to_unsigned(integer(t_len), TRAME_LEN'length));
     end if;
 end process;
 

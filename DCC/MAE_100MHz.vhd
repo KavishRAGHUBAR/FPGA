@@ -39,6 +39,7 @@ entity MAE_100MHz is
      RESET: in std_logic;
      -- Registre DCC
      DCC_BIT: in std_logic;
+     TRAME_LEN: in integer;
      --FETCH: in std_logic;
      COM_REG: out std_logic;
      -- TEMPO
@@ -56,15 +57,15 @@ end MAE_100MHz;
 
 architecture Behavioral of MAE_100MHz is
 
--- signal last: std_logic;
 signal cpt: INTEGER range 0 to 51;
+signal t_len: integer;
 
 --MAE
 type etat is(S0,S1,S2,S3,S4,S5);
 signal EP,EF: etat;
 
 begin
-    -- reset asynchrone
+    -- reset asynchrone et màj de la MAE
     process(RESET,CLK_100MHz)
     begin
         if RESET= '0' then EP <= S0;
@@ -80,7 +81,7 @@ begin
         when S1 => EF <= S1; if DCC_BIT = '1' then EF <= S2; elsif DCC_BIT = '0' then EF <= S3; end if;
         when S2 => EF <= S2; if FIN_1 = '1' then EF <= S4; end if;
         when S3 => EF <= S3; if FIN_0 = '1' then EF <= S4; end if;
-        when S4 => EF <= S4; if cpt > 50 then EF <= S5; elsif cpt <= 50 then EF <= S1; end if;
+        when S4 => EF <= S4; if cpt > t_len then EF <= S5; elsif cpt <= t_len then EF <= S1; end if;
         when S5 => EF <= S5; if FIN_TEMPO = '1' then EF <= S0; end if; 
         end case;
  end process;
@@ -90,18 +91,14 @@ begin
  begin
     
      case (EP) is
-        when S0 => START_TEMPO <= '0'; COM_REG <= '0'; cpt <= 0; GO_1 <= '0'; GO_0 <= '0';
-        when S1 => COM_REG <= '1'; cpt <= cpt + 1; GO_1 <= '0'; GO_0 <= '0'; START_TEMPO <= '0';
-        when S2 => GO_1 <= '1'; GO_0 <= '0'; COM_REG <= 'U'; START_TEMPO <= '0'; cpt <= cpt;
-        when S3 => GO_0 <= '1'; GO_1 <= '0'; COM_REG <= 'U'; START_TEMPO <= '0'; cpt <= cpt;
-        when S4 => GO_1 <= '0'; GO_0 <= '0'; COM_REG <= 'U'; START_TEMPO <= '0'; cpt <= cpt;
-        when S5 => START_TEMPO <= '1'; COM_REG <= 'U'; GO_1 <= '0'; GO_0 <= '0'; cpt <= cpt;
+        when S0 => START_TEMPO <= '0'; COM_REG <= '0'; cpt <= 0; GO_1 <= '0'; GO_0 <= '0'; t_len <= TRAME_LEN
+        when S1 => COM_REG <= '1'; cpt <= cpt + 1; GO_1 <= '0'; GO_0 <= '0'; START_TEMPO <= '0'; t_len <= t_len;
+        when S2 => GO_1 <= '1'; GO_0 <= '0'; COM_REG <= 'U'; START_TEMPO <= '0'; cpt <= cpt; t_len <= t_len;
+        when S3 => GO_0 <= '1'; GO_1 <= '0'; COM_REG <= 'U'; START_TEMPO <= '0'; cpt <= cpt; t_len <= t_len;
+        when S4 => GO_1 <= '0'; GO_0 <= '0'; COM_REG <= 'U'; START_TEMPO <= '0'; cpt <= cpt; t_len <= t_len;
+        when S5 => START_TEMPO <= '1'; COM_REG <= 'U'; GO_1 <= '0'; GO_0 <= '0'; cpt <= cpt; t_len <= t_len;
         --when others => NULL;
      end case;
  end process;
- 
- -- necessaire ?????
- --COMPTEUR POUR INDIQUER SI C'EST LE DERNIER SIGNAL POUR LE TRAME_DCC
--- last <= '1' when cpt = 51;
 
 end Behavioral;
